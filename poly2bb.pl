@@ -23,7 +23,7 @@ while(<>)
    }
 }
 
-$buffer = 0.1;
+$buffer = 0.5;
 $miny = $miny - $buffer;
 $miny = $miny < -90 ? -90 : $miny;
 $minx = $minx - $buffer;
