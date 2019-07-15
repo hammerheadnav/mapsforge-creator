@@ -53,7 +53,6 @@ MAPS_PATH="$(dirname "$MAPS_PATH/$1")"
 POIS_PATH="$(dirname "$POIS_PATH/$1")"
 
 # Check map date
-
 if [ -f "$MAPS_PATH/$NAME.map" ]; then
   if [ $(find "$MAPS_PATH/$NAME.map" -mtime -$DAYS) ]; then
     echo "$MAPS_PATH/$NAME.map exists and is newer than $DAYS days."
@@ -62,7 +61,6 @@ if [ -f "$MAPS_PATH/$NAME.map" ]; then
 fi
 
 # Pre-process
-
 rm -rf "$WORK_PATH"
 mkdir -p "$WORK_PATH"
 
@@ -75,7 +73,6 @@ if [ "$SKIP_POI_CREATION" != "true" ]; then
 fi
 
 # Download land
-
 if [ -f "$DATA_PATH/land-polygons-split-4326/land_polygons.shp" ] && [ $(find "$DATA_PATH/land-polygons-split-4326/land_polygons.shp" -mtime -$DAYS) ]; then
   echo "Land polygons exist and are newer than $DAYS days."
 else
@@ -86,37 +83,59 @@ else
   unzip -oq "$DATA_PATH/land-polygons-split-4326.zip" -d "$DATA_PATH"
 fi
 
-# Download data
+#Name override
+if [ "$FILE_NAME" == "" ]; then
+  FILE_NAME=$1
+  FILE_BASE=$NAME
+else
+  FILE_BASE="$(basename "$FILE_NAME")"
+fi
 
+# Download data
 echo "Downloading $1..."
-wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$1-latest.osm.pbf || exit 1
-wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$1-latest.osm.pbf.md5 || exit 1
-(cd "$WORK_PATH" && exec md5sum -c "$NAME-latest.osm.pbf.md5") || exit 1
-wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$1.poly || exit 1
+wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$FILE_NAME-latest.osm.pbf || exit 1
+wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$FILE_NAME-latest.osm.pbf.md5 || exit 1
+(cd "$WORK_PATH" && exec md5sum -c "$FILE_BASE-latest.osm.pbf.md5") || exit 1
+wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$FILE_NAME.poly || exit 1
 
 # Bounds
+if [ "$BBOX" == "" ]; then
+  BBOX=$(perl poly2bb.pl "$WORK_PATH/$FILE_BASE.poly")
+fi
 
-BBOX=$(perl poly2bb.pl "$WORK_PATH/$NAME.poly")
+MAX_LAT=73
+MIN_LAT=-73
+
 BBOX=(${BBOX//,/ })
-BOTTOM=${BBOX[0]}
 LEFT=${BBOX[1]}
-TOP=${BBOX[2]}
 RIGHT=${BBOX[3]}
 
-# Start position
+if (( ${BBOX[0]%.*} > $MIN_LAT )); then
+  BOTTOM=${BBOX[0]}
+else
+  BOTTOM=$MIN_LAT
+fi
 
-CENTER=$(perl poly2center.pl "$WORK_PATH/$NAME.poly")
-CENTER=(${CENTER//,/ })
-LAT=${CENTER[0]}
-LON=${CENTER[1]}
+if (( ${BBOX[2]%.*} < $MAX_LAT )); then
+  TOP=${BBOX[2]}
+else
+  TOP=$MAX_LAT
+fi
+
+# Write bounds file
+echo $LEFT $BOTTOM $RIGHT $TOP >> $WORK_PATH/$NAME-extent.txt
+
+if [ "$S3_BUCKET" != "" ]; then
+  CMD="aws s3 cp $WORK_PATH/$NAME-extent.txt s3://$S3_BUCKET/$1-extent.txt"
+  echo $CMD
+  $CMD
+fi
 
 # Land
-
 ogr2ogr -overwrite -progress -skipfailures -clipsrc $LEFT $BOTTOM $RIGHT $TOP "$WORK_PATH/land.shp" "$DATA_PATH/land-polygons-split-4326/land_polygons.shp"
 python shape2osm.py -l "$WORK_PATH/land" "$WORK_PATH/land.shp"
 
 # Sea
-
 cp sea.osm "$WORK_PATH"
 sed -i "s/\$BOTTOM/$BOTTOM/g" "$WORK_PATH/sea.osm"
 sed -i "s/\$LEFT/$LEFT/g" "$WORK_PATH/sea.osm"
@@ -124,8 +143,7 @@ sed -i "s/\$TOP/$TOP/g" "$WORK_PATH/sea.osm"
 sed -i "s/\$RIGHT/$RIGHT/g" "$WORK_PATH/sea.osm"
 
 # Merge
-
-CMD="$OSMOSIS_HOME/bin/osmosis --rb file=$WORK_PATH/$NAME-latest.osm.pbf \
+CMD="$OSMOSIS_HOME/bin/osmosis --rb file=$WORK_PATH/$FILE_BASE-latest.osm.pbf \
                                --rx file=$WORK_PATH/sea.osm --s --m"
 for f in $WORK_PATH/land*.osm; do
   CMD="$CMD --rx file=$f --s --m"
@@ -135,14 +153,12 @@ echo $CMD
 $CMD
 
 # Map
-
 if [ "$SKIP_MAP_CREATION" != "true" ]; then
   CMD="$OSMOSIS_HOME/bin/osmosis --rb file=$WORK_PATH/merge.pbf"
   [ $MAP_TRANSFORM_FILE ] && CMD="$CMD --tt file=$MAP_TRANSFORM_FILE"
   CMD="$CMD --mw file=$WORK_PATH/$NAME.map \
                  type=$2 \
                  bbox=$BOTTOM,$LEFT,$TOP,$RIGHT \
-                 map-start-position=$LAT,$LON \
                  map-start-zoom=8 \
                  tag-values=$TAG_VALUES \
                  threads=$THREADS \
@@ -153,7 +169,6 @@ if [ "$SKIP_MAP_CREATION" != "true" ]; then
   $CMD || exit 1
 
   # Check map size
-
   if [ -f "$MAPS_PATH/$NAME.map" ]; then
     OLD_SIZE=$(wc -c < "$MAPS_PATH/$NAME.map")
     NEW_SIZE=$(wc -c < "$WORK_PATH/$NAME.map")
@@ -163,10 +178,16 @@ if [ "$SKIP_MAP_CREATION" != "true" ]; then
     fi
   fi
   mv "$WORK_PATH/$NAME.map" "$MAPS_PATH/$NAME.map"
+
+  # Post-process
+  if [ "$S3_BUCKET" != "" ]; then
+    CMD="aws s3 cp $MAPS_PATH/$NAME.map s3://$S3_BUCKET/$1.map"
+    echo $CMD
+    $CMD
+  fi
 fi
 
 # POI
-
 if [ "$SKIP_POI_CREATION" != "true" ]; then
   CMD="$OSMOSIS_HOME/bin/osmosis --rb file=$WORK_PATH/$NAME-latest.osm.pbf \
                                  --pw file=$WORK_PATH/$NAME.poi \
@@ -176,7 +197,5 @@ if [ "$SKIP_POI_CREATION" != "true" ]; then
   $CMD || exit 1
   mv "$WORK_PATH/$NAME.poi" "$POIS_PATH/$NAME.poi"
 fi
-
-# Post-process
 
 rm -rf "$WORK_PATH"
