@@ -11,7 +11,7 @@
 
 # http://wiki.openstreetmap.org/wiki/Osmosis
 
-[ $OSMOSIS_HOME ] || OSMOSIS_HOME="/home/dnesbitt/osmosis"
+[ $OSMOSIS_HOME ] || OSMOSIS_HOME="/$HOME/programs/osmosis"
 [ $DATA_PATH ] || DATA_PATH="./mapsforge/data"
 [ $MAPS_PATH ] || MAPS_PATH="./mapsforge/maps"
 [ $POIS_PATH ] || POIS_PATH="./mapsforge/pois"
@@ -113,7 +113,7 @@ if [ "$1" == "australia-oceania/fiji" ]; then
   LON=178.0
 fi
 
-echo "BBOX: $LEFT,$BOTTOM to $RIGHT,$TOP Center $LAT,$LON"
+echo "BBOX: $LEFT,$BOTTOM to $RIGHT,$TOP Center $LON,$LAT"
 
 # Land
 echo "Run ogr2ogr"
