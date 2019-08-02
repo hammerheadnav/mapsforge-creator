@@ -17,14 +17,18 @@
 [ $POIS_PATH ] || POIS_PATH="$HOME/mapsforge/pois"
 [ $PROGRESS_LOGS ] || PROGRESS_LOGS="true"
 [ $TAG_VALUES ] || TAG_VALUES="false"
-[ $THREADS ] || THREADS="1"
-[ $DAYS ] || DAYS="30"
+[ $THREADS ] || THREADS="8"
+[ $DAYS ] || DAYS="7"
+[ $MAP_TAG_CONF_FILE ] || MAP_TAG_CONF_FILE="./tag-mapping.xml"
+[ $SKIP_MAP_CREATION ] || SKIP_MAP_CREATION="false"
+[ $SKIP_POI_CREATION ] || SKIP_POI_CREATION="true"
 
 # =========== DO NOT CHANGE AFTER THIS LINE. ===========================
 # Below here is regular code, part of the file. This is not designed to
 # be modified by users.
 # ======================================================================
 
+# Added a configurable buffer size as an argument
 if [ $# -lt 3 ]; then
   echo "Usage: $0 continent/country[/region] buffer_size ram|hd [lang,...]"
   echo "Example: $0 europe/germany/berlin 0.1 ram en,de,fr,es"
@@ -40,7 +44,7 @@ BUFFER_SIZE="$2"
 if [ "$TAG_VALUES" = "true" ]; then
   MAPS_PATH="$MAPS_PATH/v5"
 else
-  [ $3 ] && MAPS_PATH="$MAPS_PATH/v4" || MAPS_PATH="$MAPS_PATH/v3"
+  MAPS_PATH="$MAPS_PATH/v4"
 fi
 MAPS_PATH="$(dirname "$MAPS_PATH/$1")"
 
@@ -57,7 +61,7 @@ fi
 
 # Pre-process
 
-rm -rf "$WORK_PATH"
+#rm -rf "$WORK_PATH"
 mkdir -p "$WORK_PATH"
 
 if [ "$SKIP_MAP_CREATION" != "true" ]; then
@@ -81,38 +85,26 @@ else
 fi
 
 # Download data
-
-echo "Downloading $1..."
-wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$1-latest.osm.pbf || exit 1
-wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$1-latest.osm.pbf.md5 || exit 1
-(cd "$WORK_PATH" && exec md5sum -c "$NAME-latest.osm.pbf.md5") || exit 1
-wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$1.poly || exit 1
+echo "Check if $WORK_PATH/$NAME-latest.osm.pbf exists"
+if [ -f "$WORK_PATH/$NAME-latest.osm.pbf" ] && [ $(find "$WORK_PATH/$NAME-latest.osm.pbf" -mtime -$DAYS) ]; then
+    echo "OSM data exists and is newer than $DAYS days."
+else
+  echo "Downloading $1..."
+  wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$1-latest.osm.pbf || exit 1
+  wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$1-latest.osm.pbf.md5 || exit 1
+  (cd "$WORK_PATH" && exec md5sum -c "$NAME-latest.osm.pbf.md5") || exit 1
+  wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$1.poly || exit 1
+fi
 
 # Bounds
+
 echo "Buffer Size = $BUFFER_SIZE"
 BBOX=$(perl poly2bb.pl "$WORK_PATH/$NAME.poly" $BUFFER_SIZE)
-
-MAX_LAT=73
-MIN_LAT=-73
-
-BBOX=$(perl poly2bb.pl "$WORK_PATH/$NAME.poly")
 BBOX=(${BBOX//,/ })
 BOTTOM=${BBOX[0]}
 LEFT=${BBOX[1]}
 TOP=${BBOX[2]}
 RIGHT=${BBOX[3]}
-
-if (( ${BBOX[0]%.*} > $MIN_LAT )); then
-  BOTTOM=${BBOX[0]}
-else
-  BOTTOM=$MIN_LAT
-fi
-
-if (( ${BBOX[2]%.*} < $MAX_LAT )); then
-  TOP=${BBOX[2]}
-else
-  TOP=$MAX_LAT
-fi
 
 # Start position
 
@@ -131,8 +123,9 @@ fi
 echo "BBOX: $LEFT,$BOTTOM to $RIGHT,$TOP"
 
 # Land
-
+echo "Run ogr2ogr"
 ogr2ogr -overwrite -progress -skipfailures -clipsrc $LEFT $BOTTOM $RIGHT $TOP "$WORK_PATH/land.shp" "$DATA_PATH/land-polygons-split-4326/land_polygons.shp"
+echo "Run shape2osm"
 python shape2osm.py -l "$WORK_PATH/land" "$WORK_PATH/land.shp"
 
 # Sea
@@ -183,7 +176,6 @@ if [ "$SKIP_MAP_CREATION" != "true" ]; then
     fi
   fi
   mv "$WORK_PATH/$NAME.map" "$MAPS_PATH/$NAME.map"
-
 fi
 
 # POI
@@ -199,5 +191,4 @@ if [ "$SKIP_POI_CREATION" != "true" ]; then
 fi
 
 # Post-process
-
-rm -rf "$WORK_PATH"
+#rm -rf "$WORK_PATH"
