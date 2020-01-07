@@ -512,8 +512,7 @@
         <osm-tag key="tracktype" renderable="false" value="grade4" />
         <osm-tag key="tracktype" renderable="false" value="grade5" />
 
-        <osm-tag key="wood" renderable="false" value="coniferous" />
-        <osm-tag key="wood" renderable="false" value="deciduous" />
-        <osm-tag key="wood" renderable="false" value="mixed" />
+        <osm-tag key="tunnel" renderable="false" value="yes" />
+        <osm-tag key="tunnel" renderable="false" value="no" />
     </ways>
 </tag-mapping>
