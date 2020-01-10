@@ -115,6 +115,10 @@ if [ "$1" == "australia-oceania/fiji" ]; then
   LON=178.0
 fi
 
+# print version information for GDAL
+version=$(ogrinfo --version)
+echo $version
+
 # Land
 echo "Run ogr2ogr to clip land polygons to region bounding box: $LEFT,$BOTTOM to $RIGHT,$TOP"
 ogr2ogr -overwrite -skipfailures -clipsrc $LEFT $BOTTOM $RIGHT $TOP "$WORK_PATH/land.shp" "$DATA_PATH/land-polygons-complete-4326/land_polygons.shp"
