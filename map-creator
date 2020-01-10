@@ -135,7 +135,7 @@ echo $version
 echo "Run ogr2ogr to clip land polygons to region bounding box: $LEFT,$BOTTOM to $RIGHT,$TOP"
 ogr2ogr -overwrite -progress -skipfailures -clipsrc $LEFT $BOTTOM $RIGHT $TOP "$WORK_PATH/land.shp" "$DATA_PATH/land-polygons-split-4326/land_polygons.shp"
 echo "Run ogr2osm to convert shapefile to OSM xml format"
-python3 ogr2osm.py -v --positive-id --id 22951459320 --add-version --add-timestamp -f -o "$WORK_PATH/land1.osm" "$WORK_PATH/land.shp"
+python ogr2osm.py -v --positive-id --id 22951459320 --add-version --add-timestamp -f -o "$WORK_PATH/land1.osm" "$WORK_PATH/land.shp"
 
 # Sea
 cp sea.osm "$WORK_PATH"
