@@ -127,8 +127,6 @@ if [ "$1" == "australia-oceania/fiji" ]; then
   LON=178.0
 fi
 
-echo "BBOX: $LEFT,$BOTTOM to $RIGHT,$TOP"
-
 # Land
 echo "Run ogr2ogr to clip land polygons to region bounding box: $LEFT,$BOTTOM to $RIGHT,$TOP"
 ogr2ogr -overwrite -progress -skipfailures -clipsrc $LEFT $BOTTOM $RIGHT $TOP "$WORK_PATH/land.shp" "$DATA_PATH/land-polygons-split-4326/land_polygons.shp"
