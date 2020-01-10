@@ -46,7 +46,6 @@ MAPS_PATH="$(dirname "$MAPS_PATH/$1/$2")"
 POIS_PATH="$(dirname "$POIS_PATH/$1/$2")"
 
 # Check map date
-
 if [ -f "$MAPS_PATH/$NAME.map" ]; then
   if [ $(find "$MAPS_PATH/$NAME.map" -mtime -$DAYS) ]; then
     echo "$MAPS_PATH/$NAME.map exists and is newer than $DAYS days."
@@ -54,9 +53,8 @@ if [ -f "$MAPS_PATH/$NAME.map" ]; then
   fi
 fi
 
-# Pre-process
-
-#rm -rf "$WORK_PATH"
+# Pre-process - clean up old files and make directories where needed
+rm -rf "$WORK_PATH"
 mkdir -p "$WORK_PATH"
 
 if [ "$SKIP_MAP_CREATION" != "true" ]; then
@@ -68,7 +66,6 @@ if [ "$SKIP_POI_CREATION" != "true" ]; then
 fi
 
 # Download land
-
 if [ -f "$DATA_PATH/land-polygons-split-4326/land_polygons.shp" ] && [ $(find "$DATA_PATH/land-polygons-split-4326/land_polygons.shp" -mtime -$DAYS) ]; then
   echo "Land polygons exist and are newer than $DAYS days."
 else
@@ -110,16 +107,13 @@ if [ "$1" == "australia-oceania/fiji" ]; then
   LON=178.0
 fi
 
-echo "BBOX: $LEFT,$BOTTOM to $RIGHT,$TOP Center $LON,$LAT"
-
 # Land
-echo "Run ogr2ogr"
-ogr2ogr -overwrite -progress -skipfailures -clipsrc $LEFT $BOTTOM $RIGHT $TOP "$WORK_PATH/land.shp" "$DATA_PATH/land-polygons-split-4326/land_polygons.shp"
-echo "Run shape2osm"
-python shape2osm.py -l "$WORK_PATH/land" "$WORK_PATH/land.shp"
+echo "Run ogr2ogr to clip land polygons to region bounding box: $LEFT,$BOTTOM to $RIGHT,$TOP"
+ogr2ogr -overwrite -skipfailures -clipsrc $LEFT $BOTTOM $RIGHT $TOP "$WORK_PATH/land.shp" "$DATA_PATH/land-polygons-split-4326/land_polygons.shp"
+echo "Run ogr2osm to convert shapefile to OSM xml format"
+python ogr2osm.py -v --positive-id --id 22951459320 --add-version --add-timestamp -f -o "$WORK_PATH/land1.osm" "$WORK_PATH/land.shp"
 
 # Sea
-
 cp sea.osm "$WORK_PATH"
 sed -i "s/\$BOTTOM/$BOTTOM/g" "$WORK_PATH/sea.osm"
 sed -i "s/\$LEFT/$LEFT/g" "$WORK_PATH/sea.osm"
@@ -189,4 +183,4 @@ if [ "$SKIP_POI_CREATION" != "true" ]; then
 fi
 
 # Post-process
-#rm -rf "$WORK_PATH"
+rm -rf "$WORK_PATH"
