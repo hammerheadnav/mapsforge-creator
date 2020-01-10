@@ -11,13 +11,15 @@
 
 # http://wiki.openstreetmap.org/wiki/Osmosis
 
-[ $OSMOSIS_HOME ] || OSMOSIS_HOME="$HOME/programs/osmosis"
-[ $DATA_PATH ] || DATA_PATH="$HOME/mapsforge/data"
-[ $MAPS_PATH ] || MAPS_PATH="$HOME/mapsforge/maps"
-[ $POIS_PATH ] || POIS_PATH="$HOME/mapsforge/pois"
+# UPDATE OSMOSIS_HOME to local installation directory
+[ $OSMOSIS_HOME ] || OSMOSIS_HOME="/home/dnesbitt/osmosis"
+
+[ $DATA_PATH ] || DATA_PATH="./mapsforge/data"
+[ $MAPS_PATH ] || MAPS_PATH="./mapsforge/maps"
+[ $POIS_PATH ] || POIS_PATH="./mapsforge/pois"
 [ $PROGRESS_LOGS ] || PROGRESS_LOGS="true"
 [ $TAG_VALUES ] || TAG_VALUES="false"
-[ $THREADS ] || THREADS="8"
+[ $THREADS ] || THREADS="6"
 [ $DAYS ] || DAYS="7"
 [ $MAP_TAG_CONF_FILE ] || MAP_TAG_CONF_FILE="./tag-mapping.xml"
 [ $SKIP_MAP_CREATION ] || SKIP_MAP_CREATION="false"
@@ -28,7 +30,6 @@
 # be modified by users.
 # ======================================================================
 
-# Added a configurable buffer size as an argument
 if [ $# -lt 3 ]; then
   echo "Usage: $0 continent/country[/region] buffer_size ram|hd [lang,...]"
   echo "Example: $0 europe/germany/berlin 0.1 ram en,de,fr,es"
@@ -47,20 +48,17 @@ else
   MAPS_PATH="$MAPS_PATH/v4"
 fi
 MAPS_PATH="$(dirname "$MAPS_PATH/$1")"
-
 POIS_PATH="$(dirname "$POIS_PATH/$1")"
 
 # Check map date
-
 if [ -f "$MAPS_PATH/$NAME.map" ]; then
   if [ $(find "$MAPS_PATH/$NAME.map" -mtime -$DAYS) ]; then
     echo "$MAPS_PATH/$NAME.map exists and is newer than $DAYS days."
-    exit
+    #exit
   fi
 fi
 
-# Pre-process
-
+# Pre-process - clean up old files and make directories where needed
 #rm -rf "$WORK_PATH"
 mkdir -p "$WORK_PATH"
 
@@ -73,15 +71,14 @@ if [ "$SKIP_POI_CREATION" != "true" ]; then
 fi
 
 # Download land
-
-if [ -f "$DATA_PATH/land-polygons-split-4326/land_polygons.shp" ] && [ $(find "$DATA_PATH/land-polygons-split-4326/land_polygons.shp" -mtime -$DAYS) ]; then
+if [ -f "$DATA_PATH/land-polygons-complete-4326/land_polygons.shp" ] && [ $(find "$DATA_PATH/land-polygons-complete-4326/land_polygons.shp" -mtime -$DAYS) ]; then
   echo "Land polygons exist and are newer than $DAYS days."
 else
   echo "Downloading land polygons..."
-  rm -rf "$DATA_PATH/land-polygons-split-4326"
-  rm -f "$DATA_PATH/land-polygons-split-4326.zip"
-  wget -nv -N -P "$DATA_PATH" https://osmdata.openstreetmap.de/download/land-polygons-split-4326.zip || exit 1
-  unzip -oq "$DATA_PATH/land-polygons-split-4326.zip" -d "$DATA_PATH"
+  rm -rf "$DATA_PATH/land-polygons-complete-4326"
+  rm -f "$DATA_PATH/land-polygons-complete-4326.zip"
+  wget -nv -N -P "$DATA_PATH" https://osmdata.openstreetmap.de/download/land-polygons-complete-4326.zip || exit 1
+  unzip -oq "$DATA_PATH/land-polygons-complete-4326.zip" -d "$DATA_PATH"
 fi
 
 # Download data
@@ -97,7 +94,6 @@ else
 fi
 
 # Bounds
-
 echo "Buffer Size = $BUFFER_SIZE"
 BBOX=$(perl poly2bb.pl "$WORK_PATH/$NAME.poly" $BUFFER_SIZE)
 BBOX=(${BBOX//,/ })
@@ -107,7 +103,6 @@ TOP=${BBOX[2]}
 RIGHT=${BBOX[3]}
 
 # Start position
-
 CENTER=$(perl poly2center.pl "$WORK_PATH/$NAME.poly")
 CENTER=(${CENTER//,/ })
 LAT=${CENTER[0]}
@@ -120,16 +115,13 @@ if [ "$1" == "australia-oceania/fiji" ]; then
   LON=178.0
 fi
 
-echo "BBOX: $LEFT,$BOTTOM to $RIGHT,$TOP"
-
 # Land
-echo "Run ogr2ogr"
-ogr2ogr -overwrite -progress -skipfailures -clipsrc $LEFT $BOTTOM $RIGHT $TOP "$WORK_PATH/land.shp" "$DATA_PATH/land-polygons-split-4326/land_polygons.shp"
-echo "Run shape2osm"
-python shape2osm.py -l "$WORK_PATH/land" "$WORK_PATH/land.shp"
+echo "Run ogr2ogr to clip land polygons to region bounding box: $LEFT,$BOTTOM to $RIGHT,$TOP"
+ogr2ogr -overwrite -skipfailures -clipsrc $LEFT $BOTTOM $RIGHT $TOP "$WORK_PATH/land.shp" "$DATA_PATH/land-polygons-complete-4326/land_polygons.shp"
+echo "Run ogr2osm to convert shapefile to OSM xml format"
+python ogr2osm.py -v --positive-id --id 22951459320 --add-version --add-timestamp -f -o "$WORK_PATH/land1.osm" "$WORK_PATH/land.shp"
 
 # Sea
-
 cp sea.osm "$WORK_PATH"
 sed -i "s/\$BOTTOM/$BOTTOM/g" "$WORK_PATH/sea.osm"
 sed -i "s/\$LEFT/$LEFT/g" "$WORK_PATH/sea.osm"
@@ -137,7 +129,6 @@ sed -i "s/\$TOP/$TOP/g" "$WORK_PATH/sea.osm"
 sed -i "s/\$RIGHT/$RIGHT/g" "$WORK_PATH/sea.osm"
 
 # Merge
-
 CMD="$OSMOSIS_HOME/bin/osmosis --rb file=$WORK_PATH/$NAME-latest.osm.pbf \
                                --rx file=$WORK_PATH/sea.osm --s --m"
 for f in $WORK_PATH/land*.osm; do
@@ -148,7 +139,6 @@ echo $CMD
 $CMD
 
 # Map
-
 if [ "$SKIP_MAP_CREATION" != "true" ]; then
   CMD="$OSMOSIS_HOME/bin/osmosis --rb file=$WORK_PATH/merge.pbf"
   [ $MAP_TRANSFORM_FILE ] && CMD="$CMD --tt file=$MAP_TRANSFORM_FILE"
@@ -166,7 +156,6 @@ if [ "$SKIP_MAP_CREATION" != "true" ]; then
   $CMD || exit 1
 
   # Check map size
-
   if [ -f "$MAPS_PATH/$NAME.map" ]; then
     OLD_SIZE=$(wc -c < "$MAPS_PATH/$NAME.map")
     NEW_SIZE=$(wc -c < "$WORK_PATH/$NAME.map")
@@ -179,7 +168,6 @@ if [ "$SKIP_MAP_CREATION" != "true" ]; then
 fi
 
 # POI
-
 if [ "$SKIP_POI_CREATION" != "true" ]; then
   CMD="$OSMOSIS_HOME/bin/osmosis --rb file=$WORK_PATH/$NAME-latest.osm.pbf \
                                  --pw file=$WORK_PATH/$NAME.poi \

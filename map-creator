@@ -6,6 +6,10 @@
 # https://github.com/mapsforge/mapsforge/blob/master/docs/MapCreation.md
 #
 # Written by devemux86
+#
+# Modified by D.W. Nesbitt to use ogr2osm rather than shape2osm as well
+# as updates to use a configurable buffer when forming the bounding box
+# of a region.
 
 # Configuration
 
@@ -47,7 +51,6 @@ MAPS_PATH="$(dirname "$MAPS_PATH/$1")"
 POIS_PATH="$(dirname "$POIS_PATH/$1")"
 
 # Check map date
-
 if [ -f "$MAPS_PATH/$NAME.map" ]; then
   if [ $(find "$MAPS_PATH/$NAME.map" -mtime -$DAYS) ]; then
     echo "$MAPS_PATH/$NAME.map exists and is newer than $DAYS days."
@@ -55,8 +58,7 @@ if [ -f "$MAPS_PATH/$NAME.map" ]; then
   fi
 fi
 
-# Pre-process
-
+# Pre-process - clean up old files and make directories where needed
 rm -rf "$WORK_PATH"
 mkdir -p "$WORK_PATH"
 
@@ -113,7 +115,6 @@ else
 fi
 
 # Start position
-
 CENTER=$(perl poly2center.pl "$WORK_PATH/$NAME.poly")
 CENTER=(${CENTER//,/ })
 LAT=${CENTER[0]}
@@ -129,8 +130,10 @@ fi
 echo "BBOX: $LEFT,$BOTTOM to $RIGHT,$TOP"
 
 # Land
+echo "Run ogr2ogr to clip land polygons to region bounding box: $LEFT,$BOTTOM to $RIGHT,$TOP"
 ogr2ogr -overwrite -progress -skipfailures -clipsrc $LEFT $BOTTOM $RIGHT $TOP "$WORK_PATH/land.shp" "$DATA_PATH/land-polygons-split-4326/land_polygons.shp"
-python shape2osm.py -l "$WORK_PATH/land" "$WORK_PATH/land.shp"
+echo "Run ogr2osm to convert shapefile to OSM xml format"
+python ogr2osm.py -v --positive-id --id 22951459320 --add-version --add-timestamp -f -o "$WORK_PATH/land1.osm" "$WORK_PATH/land.shp"
 
 # Sea
 cp sea.osm "$WORK_PATH"
@@ -167,7 +170,6 @@ if [ "$SKIP_MAP_CREATION" != "true" ]; then
   $CMD || exit 1
 
   # Check map size
-
   if [ -f "$MAPS_PATH/$NAME.map" ]; then
     OLD_SIZE=$(wc -c < "$MAPS_PATH/$NAME.map")
     NEW_SIZE=$(wc -c < "$WORK_PATH/$NAME.map")
