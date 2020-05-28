@@ -197,26 +197,28 @@
         <osm-tag key="natural" value="sea" zoom-appear="0" />
         <osm-tag key="natural" value="nosea" zoom-appear="0" />
 
+        <osm-tag key="natural" value="water" zoom-appear="8" />
+        <osm-tag key="natural" value="wood" zoom-appear="8" />
+        <osm-tag key="natural" value="scrub" zoom-appear="10" />
+        <osm-tag key="natural" value="grassland" zoom-appear="10" />
+        <osm-tag key="natural" value="scree" zoom-appear="10" />
         <osm-tag key="natural" value="beach" zoom-appear="10" />
+        <osm-tag key="natural" value="wetland" zoom-appear="12" />
+        <osm-tag key="natural" value="marsh" zoom-appear="12" />
+        <osm-tag key="natural" value="sand" zoom-appear="12" />
         <!-- <osm-tag key="natural" value="coastline" zoom-appear="8" /> -->
         <!-- <osm-tag key="natural" value="fell" zoom-appear="10" /> -->
         <!-- <osm-tag enabled="false" key="natural" value="glacier" zoom-appear="8" /> -->
-        <osm-tag key="natural" value="grassland" zoom-appear="10" />
         <!-- <osm-tag key="natural" value="heath" zoom-appear="10" /> -->
         <!-- <osm-tag key="natural" value="land" zoom-appear="8" /> -->
-        <!-- <osm-tag key="natural" value="marsh" zoom-appear="12" /> -->
-        <osm-tag key="natural" value="scrub" zoom-appear="10" />
-        <osm-tag key="natural" value="scree" zoom-appear="10" />
-        <osm-tag key="natural" value="water" zoom-appear="8" />
-        <!-- <osm-tag key="natural" value="wetland" zoom-appear="12" /> -->
-        <osm-tag key="natural" value="wood" zoom-appear="8" />
 
-        <osm-tag key="waterway" value="canal" zoom-appear="10" />
-        <!-- <osm-tag key="waterway" value="dam" zoom-appear="10" /> -->
-        <osm-tag key="waterway" value="drain" zoom-appear="13" />
         <osm-tag key="waterway" value="river" zoom-appear="8" />
         <osm-tag key="waterway" value="riverbank" zoom-appear="8" />
+        <osm-tag key="waterway" value="canal" zoom-appear="10" />
+        <osm-tag key="waterway" value="dock" zoom-appear="10" />
+        <osm-tag key="waterway" value="drain" zoom-appear="13" />
         <osm-tag key="waterway" value="stream" zoom-appear="13" />
+        <!-- <osm-tag key="waterway" value="dam" zoom-appear="10" /> -->
     </ways>
 
     <!-- LANDUSE TAGS -->
@@ -501,6 +503,9 @@
         <osm-tag key="oneway" renderable="false" value="-1" />
         <osm-tag equivalent-values="0,false" key="oneway" renderable="false" value="no" />
 
+        <osm-tag key="footway" renderable="false" value="sidewalk" />
+        <osm-tag key="footway" renderable="false" value="crossing" />
+
         <!-- SURFACE TAGS -->
 	<osm-tag key="surface" renderable="false" value="unpaved" />
         <osm-tag key="surface" renderable="false" value="compacted" />
@@ -525,6 +530,5 @@
 
         <osm-tag key="tunnel" renderable="false" value="yes" />
         <osm-tag key="tunnel" renderable="false" value="no" />
-
     </ways>
 </tag-mapping>
