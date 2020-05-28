@@ -70,7 +70,7 @@ if [ "$SKIP_POI_CREATION" != "true" ]; then
   mkdir -p "$POIS_PATH"
 fi
 
-# Download land
+# Download land polygons
 if [ -f "$DATA_PATH/land-polygons-split-4326/land_polygons.shp" ] && [ $(find "$DATA_PATH/land-polygons-split-4326/land_polygons.shp" -mtime -$DAYS) ]; then
   echo "Land polygons exist and are newer than $DAYS days."
 else
@@ -79,6 +79,7 @@ else
   rm -f "$DATA_PATH/land-polygons-split-4326.zip"
   wget -nv -N -P "$DATA_PATH" https://osmdata.openstreetmap.de/download/land-polygons-split-4326.zip || exit 1
   unzip -oq "$DATA_PATH/land-polygons-split-4326.zip" -d "$DATA_PATH"
+  touch $DATA_PATH/land-polygons-split-4326/land_polygons.shp
 fi
 
 # Download data

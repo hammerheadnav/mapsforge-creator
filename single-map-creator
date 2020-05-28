@@ -70,15 +70,16 @@ if [ "$SKIP_POI_CREATION" != "true" ]; then
   mkdir -p "$POIS_PATH"
 fi
 
-# Download land
-if [ -f "$DATA_PATH/land-polygons-complete-4326/land_polygons.shp" ] && [ $(find "$DATA_PATH/land-polygons-complete-4326/land_polygons.shp" -mtime -$DAYS) ]; then
+# Download land polygons
+if [ -f "$DATA_PATH/land-polygons-split-4326/land_polygons.shp" ] && [ $(find "$DATA_PATH/land-polygons-split-4326/land_polygons.shp" -mtime -$DAYS) ]; then
   echo "Land polygons exist and are newer than $DAYS days."
 else
   echo "Downloading land polygons..."
-  rm -rf "$DATA_PATH/land-polygons-complete-4326"
-  rm -f "$DATA_PATH/land-polygons-complete-4326.zip"
-  wget -nv -N -P "$DATA_PATH" https://osmdata.openstreetmap.de/download/land-polygons-complete-4326.zip || exit 1
-  unzip -oq "$DATA_PATH/land-polygons-complete-4326.zip" -d "$DATA_PATH"
+  rm -rf "$DATA_PATH/land-polygons-split-4326"
+  rm -f "$DATA_PATH/land-polygons-split-4326.zip"
+  wget -nv -N -P "$DATA_PATH" https://osmdata.openstreetmap.de/download/land-polygons-split-4326.zip || exit 1
+  unzip -oq "$DATA_PATH/land-polygons-split-4326.zip" -d "$DATA_PATH"
+  touch $DATA_PATH/land-polygons-split-4326/land_polygons.shp
 fi
 
 # Download data
@@ -91,6 +92,7 @@ else
   wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$1-latest.osm.pbf.md5 || exit 1
   (cd "$WORK_PATH" && exec md5sum -c "$NAME-latest.osm.pbf.md5") || exit 1
   wget -nv -N -P "$WORK_PATH" https://download.geofabrik.de/$1.poly || exit 1
+  touch $WORK_PATH/$NAME-latest.osm.pbf
 fi
 
 # Bounds
@@ -121,9 +123,9 @@ echo $version
 
 # Land
 echo "Run ogr2ogr to clip land polygons to region bounding box: $LEFT,$BOTTOM to $RIGHT,$TOP"
-ogr2ogr -overwrite -progress -skipfailures -clipsrc $LEFT $BOTTOM $RIGHT $TOP "$WORK_PATH/land.shp" "$DATA_PATH/land-polygons-complete-4326/land_polygons.shp"
+ogr2ogr -overwrite -progress -skipfailures -clipsrc $LEFT $BOTTOM $RIGHT $TOP "$WORK_PATH/land.shp" "$DATA_PATH/land-polygons-split-4326/land_polygons.shp"
 echo "Run ogr2osm to convert shapefile to OSM xml format"
-python ogr2osm.py -v --positive-id --id 22951459320 --add-version --add-timestamp -f -o "$WORK_PATH/land1.osm" "$WORK_PATH/land.shp"
+python2 ogr2osm.py -v --positive-id --id 22951459320 --add-version --add-timestamp -f -o "$WORK_PATH/land1.osm" "$WORK_PATH/land.shp"
 
 # Sea
 cp sea.osm "$WORK_PATH"
