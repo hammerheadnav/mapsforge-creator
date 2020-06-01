@@ -160,6 +160,7 @@ if [ "$SKIP_MAP_CREATION" != "true" ]; then
                  type=$2 \
                  bbox=$BOTTOM,$LEFT,$TOP,$RIGHT \
                  map-start-zoom=8 \
+                 polylabel=true \
                  tag-values=$TAG_VALUES \
                  threads=$THREADS \
                  progress-logs=$PROGRESS_LOGS"
