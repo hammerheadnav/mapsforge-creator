@@ -57,14 +57,18 @@ rm osmosis-latest.tgz
 chmod a+x bin/osmosis
 ```
 
-Within map-creator or variant scripts the OSMOSIS_HOME variable must be hanged to point to the directory where osmosis resides.
+Within map-creator or variant scripts the OSMOSIS_HOME variable must be changed to point to the directory where osmosis resides.
 
 The last step in the setup is to add the Mapsforge writers to osmosis:
 ```bash
 cd osmosis/lib/default/
-wget https://search.maven.org/remotecontent?filepath=org/mapsforge/mapsforge-poi-writer/0.10.0/mapsforge-poi-writer-0.10.0-jar-with-dependencies.jar
-wget https://search.maven.org/remotecontent?filepath=org/mapsforge/mapsforge-map-writer/0.10.0/mapsforge-map-writer-0.10.0-jar-with-dependencies.jar
+wget https://search.maven.org/remotecontent?filepath=org/mapsforge/mapsforge-poi-writer/0.10.0/mapsforge-poi-writer-0.14.0-jar-with-dependencies.jar
+wget https://search.maven.org/remotecontent?filepath=org/mapsforge/mapsforge-map-writer/0.10.0/mapsforge-map-writer-0.14.0-jar-with-dependencies.jar
 ```
+
+## Local osmosis Setup
+
+When running locally, osmosis needs to be installed and scripts (e.g. single_map_creator) need to have OSMOSIS_HOME updated to point to the osmosis installed directory. Mapsforge map and POI writers need to be downloaded and copied into OSMOSIS_HOME/lib/default (make sure they are the jar files with dependencies). These can be found in the Maven repository: https://mvnrepository.com/artifact/org.mapsforge.
 
 ## Notes
 
