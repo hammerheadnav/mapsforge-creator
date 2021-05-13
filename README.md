@@ -48,7 +48,7 @@ apt install -y gdal-bin python-gdal
 
 For osmosis:
 ```bash
-wget https://bretth.dev.openstreetmap.org/osmosis-build/osmosis-latest.tgz
+wget https://github.com/openstreetmap/osmosis/releases/download/0.48.3/osmosis-0.48.3.tgz
 mkdir osmosis
 mv osmosis-latest.tgz osmosis
 cd osmosis
@@ -62,8 +62,8 @@ Within map-creator or variant scripts the OSMOSIS_HOME variable must be hanged t
 The last step in the setup is to add the Mapsforge writers to osmosis:
 ```bash
 cd osmosis/lib/default/
-wget https://search.maven.org/remotecontent?filepath=org/mapsforge/mapsforge-poi-writer/0.10.0/mapsforge-poi-writer-0.10.0-jar-with-dependencies.jar
-wget https://search.maven.org/remotecontent?filepath=org/mapsforge/mapsforge-map-writer/0.10.0/mapsforge-map-writer-0.10.0-jar-with-dependencies.jar
+wget https://search.maven.org/remotecontent?filepath=org/mapsforge/mapsforge-poi-writer/0.15.0/mapsforge-poi-writer-0.15.0-jar-with-dependencies.jar
+wget https://search.maven.org/remotecontent?filepath=org/mapsforge/mapsforge-map-writer/0.15.0/mapsforge-map-writer-0.15.0-jar-with-dependencies.jar
 ```
 
 ## Notes
