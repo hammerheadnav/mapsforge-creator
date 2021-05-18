@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<!--  DateTime: 28.02.2019 15:16:56 -->
+<translations>
+  <translation>
+    <name>Tunnels</name>
+    <description>Adjust tunnel layers</description>
+    <match type="way" mode="or">
+      <match mode="and">
+        <tag k="highway" v=".*"/>
+        <tag k="tunnel" v="yes"/>
+        <!--tag k="layer" v=".*"/-->
+      </match>
+      <match mode="and">
+        <tag k="railway" v=".*"/>
+        <tag k="tunnel" v="yes"/>
+        <!--tag k="layer" v=".*"/-->
+      </match>
+    </match>
+    <output>
+      <copy-all/>
+      <tag k="layer" v="2"/>
+    </output>
+  </translation>
+</translations>

@@ -183,7 +183,15 @@
         <osm-tag key="highway" value="steps" zoom-appear="16" />
     </ways>
 
-    <!-- CYCLEWAY AND NETWORK TAGS -->
+    <!-- Bicycle network tags - set as separate ways rather than non-renderable -->
+    <!-- so that they remain consistently displayed at various zoom levels -->
+    <ways>
+        <osm-tag key="icn" value="yes" zoom-appear="12" />
+        <osm-tag key="ncn" value="yes" zoom-appear="12" />
+        <osm-tag key="rcn" value="yes" zoom-appear="13" />
+        <osm-tag key="lcn" value="yes" zoom-appear="14" />
+    </ways>
+
     <ways>
         <osm-tag key="route" value="bicycle" zoom-appear="8" />
         <osm-tag key="bicycle_road" value="yes" zoom-appear="8" />
@@ -466,11 +474,6 @@
 
         <osm-tag key="bicycle" renderable="false" value="designated" />
         <osm-tag key="bicycle" renderable="false" value="yes" />
-
-        <osm-tag key="network" renderable="false" value="icn" />
-        <osm-tag key="network" renderable="false" value="ncn" />
-        <osm-tag key="network" renderable="false" value="rcn" />
-        <osm-tag key="network" renderable="false" value="lcn" />
 
         <!-- Cycleway tags (not highway:cycleway) represent bicycle lanes attached to ways /> -->
         <osm-tag key="cycleway" renderable="false" value="lane" />
