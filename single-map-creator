@@ -13,17 +13,19 @@
 
 # UPDATE OSMOSIS_HOME to local installation directory
 [ $OSMOSIS_HOME ] || OSMOSIS_HOME="/home/dnesbitt/osmosis"
-
+#[ $OSMOSIS_HOME ] || OSMOSIS_HOME="/$HOME/programs/osmosis"
 [ $DATA_PATH ] || DATA_PATH="./mapsforge/data"
 [ $MAPS_PATH ] || MAPS_PATH="./mapsforge/maps"
 [ $POIS_PATH ] || POIS_PATH="./mapsforge/pois"
 [ $PROGRESS_LOGS ] || PROGRESS_LOGS="true"
 [ $TAG_VALUES ] || TAG_VALUES="false"
-[ $THREADS ] || THREADS="6"
+[ $THREADS ] || THREADS="4"
 [ $DAYS ] || DAYS="7"
+[ $MAP_TRANSFORM_FILE ] || MAP_TRANSFORM_FILE="./tag-transform.xml"
 [ $MAP_TAG_CONF_FILE ] || MAP_TAG_CONF_FILE="./tag-mapping.xml"
 [ $SKIP_MAP_CREATION ] || SKIP_MAP_CREATION="false"
 [ $SKIP_POI_CREATION ] || SKIP_POI_CREATION="true"
+[ $PREFERRED_LANGUAGES ] || PREFERRED_LANGUAGES="en"
 
 # =========== DO NOT CHANGE AFTER THIS LINE. ===========================
 # Below here is regular code, part of the file. This is not designed to
@@ -31,8 +33,8 @@
 # ======================================================================
 
 if [ $# -lt 3 ]; then
-  echo "Usage: $0 continent/country[/region] buffer_size ram|hd [lang,...]"
-  echo "Example: $0 europe/germany/berlin 0.1 ram en,de,fr,es"
+  echo "Usage: $0 continent/country[/region] buffer_size ram|hd"
+  echo "Example: $0 europe/germany/berlin 0.1 ram"
   exit
 fi
 
@@ -117,6 +119,13 @@ if [ "$1" == "australia-oceania/fiji" ]; then
   LON=178.0
 fi
 
+# New Zealand crosses 180 longitude, adjust its longitude bounds and center
+if [ "$1" == "australia-oceania/new-zealand" ]; then
+  LEFT=165.0
+  RIGHT=180.0
+  LON=173.0
+fi
+
 # print version information for GDAL
 version=$(ogrinfo --version)
 echo $version
@@ -140,9 +149,15 @@ CMD="$OSMOSIS_HOME/bin/osmosis --rb file=$WORK_PATH/$NAME-latest.osm.pbf \
 for f in $WORK_PATH/land*.osm; do
   CMD="$CMD --rx file=$f --s --m"
 done
-CMD="$CMD --wb file=$WORK_PATH/merge.pbf omitmetadata=true"
+CMD="$CMD --wb file=$WORK_PATH/merge1.pbf omitmetadata=true"
 echo $CMD
 $CMD
+
+# Extract ways from route relations to create cycling network tags on ways
+# Remove temporary files
+rm $WORK_PATH/merge.pbf
+python3 extract_route_relations.py -i $WORK_PATH/merge1.pbf -o $WORK_PATH/merge.pbf
+rm $WORK_PATH/merge1.pbf
 
 # Map
 if [ "$SKIP_MAP_CREATION" != "true" ]; then
@@ -153,11 +168,10 @@ if [ "$SKIP_MAP_CREATION" != "true" ]; then
                  bbox=$BOTTOM,$LEFT,$TOP,$RIGHT \
                  map-start-position=$LAT,$LON \
                  map-start-zoom=8 \
-                 polylabel=true \
                  tag-values=$TAG_VALUES \
                  threads=$THREADS \
                  progress-logs=$PROGRESS_LOGS"
-  [ $4 ] && CMD="$CMD preferred-languages=$4"
+  [ $PREFERRED_LANGUAGES ] && CMD="$CMD preferred-languages=$PREFERRED_LANGUAGES"
   [ $MAP_TAG_CONF_FILE ] && CMD="$CMD tag-conf-file=$MAP_TAG_CONF_FILE"
   echo $CMD
   $CMD || exit 1
