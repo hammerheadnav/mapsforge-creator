@@ -158,7 +158,7 @@ CMD="$OSMOSIS_HOME/bin/osmosis --rb file=$WORK_PATH/$NAME-latest.osm.pbf \
 for f in $WORK_PATH/land*.osm; do
   CMD="$CMD --rx file=$f --s --m"
 done
-CMD="$CMD --wb file=$WORK_PATH/merge.pbf omitmetadata=true"
+CMD="$CMD --wb file=$WORK_PATH/merge1.pbf omitmetadata=true"
 echo $CMD
 $CMD
 
