@@ -162,6 +162,12 @@ CMD="$CMD --wb file=$WORK_PATH/merge.pbf omitmetadata=true"
 echo $CMD
 $CMD
 
+# Extract ways from route relations to create cycling network tags on ways
+# Remove temporary files
+rm $WORK_PATH/merge.pbf
+python3 extract_route_relations.py -i $WORK_PATH/merge1.pbf -o $WORK_PATH/merge.pbf
+rm $WORK_PATH/merge1.pbf
+
 # Map
 if [ "$SKIP_MAP_CREATION" != "true" ]; then
   CMD="$OSMOSIS_HOME/bin/osmosis --rb file=$WORK_PATH/merge.pbf"
