@@ -75,13 +75,13 @@ class Convert(o.SimpleHandler):
   def relation(self, r):
     self.writer.add_relation(r)
 
+# Parse relations to form list of ways for each bicycle route network type
 def parse_relations():
-  # Parse relations to form list of ways for each bicycle route network type
   h = RouteNetworkHandler()
   h.apply_file(osm_file)
 
+# Check and process command line arguments
 def check_args(argv):
-
   global osm_file
   global out_file
   try:
