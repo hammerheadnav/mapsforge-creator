@@ -76,7 +76,7 @@ class Convert(o.SimpleHandler):
     self.writer.add_relation(r)
 
 # Parse relations to form list of ways for each bicycle route network type
-def parse_relations():
+def parse_relations(osm_file):
   h = RouteNetworkHandler()
   h.apply_file(osm_file)
 
@@ -104,7 +104,7 @@ if __name__ == "__main__":
   check_args(sys.argv[1:])
   print('osm file = ' + osm_file)
 
-  parse_relations()
+  parse_relations(osm_file)
   icn.sort()
   ncn.sort()
   rcn.sort()
