@@ -97,6 +97,9 @@ else
   touch $WORK_PATH/$NAME-latest.osm.pbf
 fi
 
+# Extract ways from route relations to create cycling network tags on ways
+python3 extract_route_relations.py -i $WORK_PATH/$NAME-latest.osm.pbf -o $WORK_PATH/$NAME.pbf
+
 # Bounds
 echo "Buffer Size = $BUFFER_SIZE"
 BBOX=$(perl poly2bb.pl "$WORK_PATH/$NAME.poly" $BUFFER_SIZE)
@@ -144,20 +147,14 @@ sed -i "s/\$TOP/$TOP/g" "$WORK_PATH/sea.osm"
 sed -i "s/\$RIGHT/$RIGHT/g" "$WORK_PATH/sea.osm"
 
 # Merge
-CMD="$OSMOSIS_HOME/bin/osmosis --rb file=$WORK_PATH/$NAME-latest.osm.pbf \
+CMD="$OSMOSIS_HOME/bin/osmosis --rb file=$WORK_PATH/$NAME.pbf \
                                --rx file=$WORK_PATH/sea.osm --s --m"
 for f in $WORK_PATH/land*.osm; do
   CMD="$CMD --rx file=$f --s --m"
 done
-CMD="$CMD --wb file=$WORK_PATH/merge1.pbf omitmetadata=true"
+CMD="$CMD --wb file=$WORK_PATH/merge.pbf omitmetadata=true"
 echo $CMD
 $CMD
-
-# Extract ways from route relations to create cycling network tags on ways
-# Remove temporary files
-rm $WORK_PATH/merge.pbf
-python3 extract_route_relations.py -i $WORK_PATH/merge1.pbf -o $WORK_PATH/merge.pbf
-rm $WORK_PATH/merge1.pbf
 
 # Map
 if [ "$SKIP_MAP_CREATION" != "true" ]; then
@@ -182,10 +179,12 @@ if [ "$SKIP_MAP_CREATION" != "true" ]; then
     NEW_SIZE=$(wc -c < "$WORK_PATH/$NAME.map")
     if [ $NEW_SIZE -lt $(($OLD_SIZE * 70 / 100)) ]; then
       echo "$WORK_PATH/$NAME.map creation is significantly smaller."
+      rm $WORK_PATH/$NAME.pbf
       exit 1
     fi
   fi
   mv "$WORK_PATH/$NAME.map" "$MAPS_PATH/$NAME.map"
+  rm $WORK_PATH/$NAME.pbf
 fi
 
 # POI

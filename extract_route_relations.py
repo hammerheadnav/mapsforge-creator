@@ -1,3 +1,4 @@
+import datetime
 import sys
 import getopt
 
@@ -7,10 +8,10 @@ import osmium as o
 # Global vars
 osm_file = None
 out_file = None
-ncn = []
-rcn = []
-icn = []
-lcn = []
+ncn = {}
+rcn = {}
+icn = {}
+lcn = {}
 
 class RouteNetworkHandler(o.SimpleHandler):
 
@@ -22,16 +23,16 @@ class RouteNetworkHandler(o.SimpleHandler):
       if 'network' in r.tags:
         if r.tags['network'] == 'icn':
           for member in r.members:
-            icn.append(member.ref)
+            icn.add(member.ref)
         elif r.tags['network'] == 'ncn':
           for member in r.members:
-            ncn.append(member.ref)
+            ncn.add(member.ref)
         elif r.tags['network'] == 'rcn':
           for member in r.members:
-            rcn.append(member.ref)
+            rcn.add(member.ref)
         elif r.tags['network'] == 'lcn':
           for member in r.members:
-            lcn.append(member.ref)
+            lcn.add(member.ref)
 
 class Convert(o.SimpleHandler):
 
@@ -102,13 +103,20 @@ def check_args(argv):
 if __name__ == "__main__":
 
   check_args(sys.argv[1:])
-  print('osm file = ' + osm_file)
+  print('extract_route_relations: osm file= ' + osm_file)
 
+  # initializes sets (otherwise they are dictionary types!)
+  icn = set()
+  ncn = set()
+  rcn = set()
+  lcn = set()
+
+  begin_time = datetime.datetime.now()
   parse_relations(osm_file)
-  icn.sort()
-  ncn.sort()
-  rcn.sort()
-  lcn.sort()
+  #icn.sort()
+  #ncn.sort()
+  #rcn.sort()
+  #lcn.sort()
 
   # Use PyOsmium to rewrite the pbf file with network tags added to matching ways
   writer = o.SimpleWriter(out_file)
@@ -122,4 +130,7 @@ if __name__ == "__main__":
   print('lcn count= %d' % handler.lcn)
 
   writer.close()
+  seconds = (datetime.datetime.now() - begin_time).total_seconds()
+  print('extract_route_relations took ' + str(seconds) + ' seconds')
+
 
