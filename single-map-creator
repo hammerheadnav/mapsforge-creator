@@ -129,6 +129,13 @@ if [ "$1" == "australia-oceania/new-zealand" ]; then
   LON=173.0
 fi
 
+# Alaska crosses 180 longitude, adjust its longitude bounds and center
+if [ "$1" == "north-america/us/alaska" ]; then
+  LEFT=-180.0
+  RIGHT=-129.0
+  LON=-150.0
+fi
+
 # print version information for GDAL
 version=$(ogrinfo --version)
 echo $version
